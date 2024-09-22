@@ -1,7 +1,8 @@
 import sqlite3
 from typing import List
-from server.src.lib.sql import Queries
-from server.src.lib.util.database import db_cursor
+
+from src.lib.sql import Queries
+from src.lib.util.database import db_cursor
 
 
 class DatabaseEntry:
@@ -97,7 +98,8 @@ class DatabaseEntry:
             if ids:
                 # Create a placeholder for each id
                 placeholders = ','.join(['?'] * len(ids))
-                qry = f"SELECT * FROM {self.table_name} WHERE {self.ukey_name} IN ({placeholders})"
+                qry = f"""SELECT * FROM {self.table_name} WHERE {
+                    self.ukey_name} IN ({placeholders})"""
                 cursor.execute(qry, tuple(str(id) for id in ids))
                 rows.extend(dict(row) for row in cursor.fetchall())
 
@@ -108,21 +110,24 @@ class DatabaseEntry:
 
         return rows
 
-    def get_rows(self, interval: int = None, limit: int = None) -> List[dict]:
-        """Get all rows from the table."""
+    def get_rows(self, interval: int = 0, limit: int = None) -> List[dict]:
+        """Get rows from the table, with optional pagination."""
         cursor = db_cursor()
         try:
-            if interval is not None and limit is not None:
+            if limit is not None:
                 qry = f"SELECT * FROM {self.table_name} LIMIT ? OFFSET ?"
-
                 cursor.execute(qry, (limit, interval))
-                rows = [dict(row) for row in cursor.fetchall()]
-                return rows
             else:
-                row_ids = self.get_all_ids()
-                return self.get_row_by_ids(ids=row_ids)
+                qry = f"SELECT * FROM {self.table_name}"
+                cursor.execute(qry)
+
+            rows = [dict(row) for row in cursor.fetchall()]
+            return rows
+
         except sqlite3.Error as e:
             print(f"Error fetching rows: {e}")
+            return []
+
         finally:
             cursor.close()
 
