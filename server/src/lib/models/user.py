@@ -1,8 +1,10 @@
-from server.src.lib.models.database_entity import DatabaseEntry
-from server.src.lib.util.database import db_cursor as connect_db
 from typing import List
-from server.src.lib.models.class_ import Class
-from server.src.lib.util.seed_data import students as student_json
+
+import bcrypt
+from src.lib.models.class_ import Class
+from src.lib.models.database_entity import DatabaseEntry
+from src.lib.util.database import db_cursor as connect_db
+from src.lib.util.seed_data import students as student_json
 
 
 class Teacher(DatabaseEntry):
@@ -16,42 +18,20 @@ class Teacher(DatabaseEntry):
         self.data = None
         self.role_data = None
 
-        # Flask-Login required attributes
-        self.is_active = True
-        self.is_anonymous = False
-        self.is_authenticated = False
-        self.user_id = None
-
     def get_teachers(self) -> List[dict]:
         """Get the teachers."""
         teacher_ids = self.get_all_ids()
         return self.get_row_by_ids(ids=teacher_ids)
 
-    def get_teacher_data_by_id(self, teacher_id: int) -> dict:
-        """Get the teacher by id."""
-        self.teacher_id = teacher_id
-
-        if teacher_id is not None:
-            teacher_role = self.get_teacher_role()
-            if teacher_role:
-                # Set either moderator or applicant role data as attribute
-                self.is_authenticated = True
-                self.role_data = teacher_role
-                self.data = self.get_row_by_ids(id=teacher_id)[0]
-                return True
-        else:
-            return None
-        return self.get_row_by_ids(id=teacher_id)
-
     @staticmethod
-    def get_teacher_id_by_teachername(teachername: str) -> int:
-        """Get the teacher id by teachername."""
+    def get_teacher_id_by_username(username: str) -> int:
+        """Get the teacher id by username."""
 
-        qry = "SELECT id FROM teachers WHERE teachername = ?"
+        qry = "SELECT id FROM teachers WHERE username = ?"
         cursor = connect_db()
-        cursor.execute(qry, (teachername,))
+        cursor.execute(qry, (username,))
         teacher = cursor.fetchone()
-        if teacher is not None:
+        if teacher:
             return int(teacher['id'])
         else:
             return None
@@ -68,38 +48,44 @@ class Teacher(DatabaseEntry):
             return teacher
         return None
 
-    def authenticate_teacher(self, teachername: str, password: str) -> dict:
-        """Check the teacher credentials."""
+    def authenticate_teacher(self, username: str, password: str) -> bool:
+        """Check the teacher credentials with bcrypt."""
 
-        teacher_id = self.get_teacher_id_by_teachername(teachername)
+        teacher_id = self.get_teacher_id_by_username(username)
 
         # Set the teacher_id attribute
-        self.teacher_id = teacher_id
+        if teacher_id:
+            self.teacher_id = teacher_id
+            teacher = self.get_row_by_ids(id=teacher_id)[0]
 
-        if teacher_id is not None:
-            teacher_role = self.get_teacher_role()
-            if teacher_role['password'] == password:
+            stored_password = teacher['password']
+
+            # Verifieer het wachtwoord met bcrypt
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 self.is_authenticated = True
-                # Set either moderator or applicant role data as attribute
-                self.role_data = teacher_role
-                self.data = self.get_row_by_ids(id=teacher_id)[0]
+                self.data = teacher
+                self.admin = bool(teacher['admin'])
                 return True
 
-        return None
+        return False
 
-    def demo(self, demo_size: int = 5) -> None:
+    def seed_teachers(self, demo_size: int = 5) -> None:
         """Seed database with mock data for demo."""
-        demo_data = [{"username": f'teacher{i}', "password": f'password{i}'}
-                     for i in range(1, demo_size + 1)]
-        if self.get_table_count() > 0:
-            return
-        self.set_table_data(demo_data)
-        self.insert_data_in_db()
+        if self.get_table_count() == 0:
+            teachers = []
+            for i in range(1, demo_size + 1):
+                username = f'test{i}'
+                password = f'test{i}'
 
-    # Flask-Login methods
-    def get_id(self):
-        """Return the teacher ID as a string."""
-        return str(self.teacher_id)
+                # Generate a salt and hash the password
+                salt = bcrypt.gensalt()
+                hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+
+                teachers.append(
+                    {"username": username, "password": hashed_password.decode('utf-8')})
+
+            self.set_table_data(teachers)
+            self.insert_data_in_db()
 
 
 model_class = Class()
@@ -111,14 +97,9 @@ class Student(DatabaseEntry):
         self.table_name = 'students'
         self.ukey_name = 'id'
 
+        self.is_authenticated = False
         self.is_authorized = False
         self.data = None
-
-        # Flask-Login required attributes
-        self.is_active = True
-        self.is_anonymous = False
-        self.is_authenticated = False
-        self.user_id = None
 
     def seed_students(self):
         if self.get_table_count() == 0:
@@ -155,8 +136,10 @@ class Student(DatabaseEntry):
         cursor = connect_db()
         cursor.execute(qry, (student_num,))
         user = cursor.fetchone()
+
         if user is not None:
-            return int(user['id'])
+            user_id = dict(user)['id']
+            return user_id
         else:
             return None
 
@@ -180,8 +163,9 @@ class Student(DatabaseEntry):
         try:
             qry = f"SELECT mbti FROM {self.table_name} WHERE id IS ?"
             cursor = connect_db()
-            cursor.execute(qry, (self.user_id))
+            cursor.execute(qry, (self.user_id,))
             data = cursor.fetchone()
+
             # If user is found
             if data:
                 if dict(data)['mbti']:
@@ -194,7 +178,21 @@ class Student(DatabaseEntry):
         except Exception as e:
             print(f"Error in auth: {e}")
 
-    # Flask-Login methods
-    def get_id(self):
-        """Return the user ID as a string."""
-        return str(self.user_id)
+    def get_student_answers(self, student_id: int) -> List[dict]:
+        """Get the student answers."""
+        qry = "SELECT statement_id FROM answers WHERE student_id = ?"
+        cursor = connect_db()
+        cursor.execute(qry, (student_id,))
+
+        answers = [row['statement_id'] for row in cursor.fetchall()]
+
+        statement_prompt_ids = []
+        for answer in answers:
+            qry = "SELECT prompt_id FROM statements WHERE id = ?"
+            cursor.execute(qry, (answer,))
+            statement_prompt_ids.append(cursor.fetchone())
+
+        student_answer = [{"prompt_id": statement_prompt_ids[i],
+                           "statement_id": statement_prompt_ids[i]} for i in range(len(statement_prompt_ids))]
+
+        return cursor.fetchall()
