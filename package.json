@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "dev": "concurrently \"cd ./client && next dev\" \"python ./app.py\""
+  },
+  "dependencies": { "concurrently": "^8.2.2", "next": "^14.2.3" }
+}
