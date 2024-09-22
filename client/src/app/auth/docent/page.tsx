@@ -1,4 +1,38 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function DocentAuth() {
+  const router = useRouter();
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const response = await fetch("/api/auth/teacher", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: formData.get("username"),
+        password: formData.get("password"),
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      const JWT_TOKEN = result.access_token;
+
+      localStorage.setItem("username", formData.get("username").toString());
+      localStorage.setItem("JWT_TOKEN", JWT_TOKEN);
+      localStorage.setItem("role", "teacher");
+
+      router.push("/dashboard");
+    } else {
+      const error = await response.json();
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <section className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
       <div className="w-full rounded-lg shadow bg-card-foreground md:mt-0 sm:max-w-md xl:p-0 ">
@@ -8,8 +42,8 @@ export default function DocentAuth() {
           </h1>
           <form
             className="space-y-4 md:space-y-6"
-            method="POST"
-            action="{{ url_for('auth.student.student_login') }}"
+            method="post"
+            onSubmit={onSubmit}
           >
             <div>
               <label
@@ -19,7 +53,7 @@ export default function DocentAuth() {
                 Gebruikersnaam
               </label>
               <input
-                type="username"
+                type="text"
                 name="username"
                 id="username"
                 className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 "

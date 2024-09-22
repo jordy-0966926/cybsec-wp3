@@ -1,6 +1,8 @@
+"use client";
 import Link from "next/link";
 
 export default function Auth() {
+  localStorage.clear();
   return (
     <section className="flex flex-col items-center justify-center h-screen px-6 py-8 mx-auto">
       <div className="w-full rounded-sm shadow bg-primary-foreground md:mt-0 sm:max-w-md xl:p-0">
