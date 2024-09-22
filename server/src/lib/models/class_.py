@@ -1,5 +1,5 @@
-from server.src.lib.models.database_entity import DatabaseEntry
-from server.src.lib.util.database import db_cursor as connect_db
+from src.lib.models.database_entity import DatabaseEntry
+from src.lib.util.database import db_cursor as connect_db
 
 
 class Class(DatabaseEntry):

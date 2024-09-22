@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
-
-from server.src.lib.models.statement import Statement
-
+from flask_jwt_extended import jwt_required
+from src.lib.models.statement import Statement
 
 blueprint = Blueprint('prompt', __name__)
 

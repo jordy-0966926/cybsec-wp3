@@ -1,7 +1,5 @@
 from flask import Blueprint, jsonify, request
-
-from server.src.lib.models.class_ import Class
-
+from src.lib.models.class_ import Class
 
 blueprint = Blueprint('class_', __name__)
 

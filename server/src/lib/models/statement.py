@@ -1,6 +1,6 @@
-from server.src.lib.models.database_entity import DatabaseEntry
-from server.src.lib.util.database import db_cursor as connect_db
-from server.src.lib.util.seed_data import actiontype_statements as json_file
+from src.lib.models.database_entity import DatabaseEntry
+from src.lib.util.database import db_cursor as connect_db
+from src.lib.util.seed_data import actiontype_statements as json_file
 
 
 class Statement(DatabaseEntry):

@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
-
-from server.src.lib.models.statement import Statement
+from src.lib.models.statement import Statement
 
 blueprint = Blueprint('statement', __name__)
 

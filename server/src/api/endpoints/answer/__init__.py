@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
-
-from server.src.lib.models.answer import Answer
-from server.src.lib.models.user import Student
+from src.lib.models.answer import Answer
+from src.lib.models.user import Student
 
 blueprint = Blueprint('answer', __name__)
 

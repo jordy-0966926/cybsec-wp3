@@ -1,8 +1,7 @@
-from flask import Blueprint, request, jsonify
-from server.src.api.endpoints.auth.student import blueprint as student
-from server.src.api.endpoints.auth.teacher import blueprint as teacher
-
-from server.src.lib.models.user import Student, Teacher
+from flask import Blueprint, jsonify, request
+from src.api.endpoints.auth.student import blueprint as student
+from src.api.endpoints.auth.teacher import blueprint as teacher
+from src.lib.models.user import Student, Teacher
 
 blueprint = Blueprint('auth', __name__, url_prefix='/auth')
 
