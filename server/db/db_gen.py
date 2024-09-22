@@ -42,7 +42,8 @@ class WP3DatabaseGenerator:
         CREATE TABLE IF NOT EXISTS teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username text NOT NULL,
-            password text NOT NULL
+            password text NOT NULL,
+            admin BOOLEAN NOT NULL DEFAULT 0
         );
         """
         self.__execute_transaction_statement(create_statement)
@@ -86,6 +87,7 @@ class WP3DatabaseGenerator:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id INTEGER NOT NULL,
             statement_id INTEGER NOT NULL,
+            prompt_id INTEGER NOT NULL,
             FOREIGN KEY (student_id) REFERENCES students(id),
             FOREIGN KEY (statement_id) REFERENCES statements(id)
         );
@@ -104,12 +106,14 @@ class WP3DatabaseGenerator:
     def test_file_location(self):
         if not self.database_file.parent.exists():
             raise ValueError(
-                f"Database file location {self.database_file.parent} does not exist"
+                f"""Database file location {
+                    self.database_file.parent} does not exist"""
             )
         if self.database_file.exists():
             if not self.database_overwrite:
                 raise ValueError(
-                    f"Database file {self.database_file} already exists, set overwrite=True to overwrite"
+                    f"""Database file {
+                        self.database_file} already exists, set overwrite=True to overwrite"""
                 )
             else:
                 # Unlink verwijdert een bestand
@@ -121,7 +125,8 @@ class WP3DatabaseGenerator:
                 print("[SUCCESS] New database setup")
             except Exception as e:
                 raise ValueError(
-                    f"Could not create database file {self.database_file} due to error {e}"
+                    f"""Could not create database file {
+                        self.database_file} due to error {e}"""
                 )
 
 
