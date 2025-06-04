@@ -4,6 +4,6 @@
   },
   "dependencies": {
     "concurrently": "^8.2.2",
-    "next": "^14.2.3"
+    "next": "^15.2.2"
   }
 }
